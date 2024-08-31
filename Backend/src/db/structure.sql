@@ -13,8 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-    title VARCHAR(32) NOT NULL,
-    description VARCHAR(255),
+    title VARCHAR(140) NOT NULL,
     user_id INTEGER,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -23,7 +22,7 @@ CREATE TABLE IF NOT EXISTS todos (
     id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
     title VARCHAR(140) NOT NULL,
     content TEXT,
-    isCompleted BOOLEAN DEFAULT FALSE NOT NULL,
+    is_completed BOOLEAN DEFAULT FALSE NOT NULL,
     user_id INTEGER,
     category_id INTEGER,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -40,11 +39,9 @@ INSERT INTO users (
 
 INSERT INTO categories (
     title,
-    description,
     user_id
 ) VALUES (
     "IRL",
-    "Tâches à faire IRL",
     1
 );
 

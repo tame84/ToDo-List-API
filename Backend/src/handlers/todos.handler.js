@@ -1,15 +1,19 @@
 import { db } from "../db/database.js";
-import { TodoNotFoundError, TitleNotProvidedError } from "../errors/customErrors.js";
+import { RecordNotFoundError, ElementNotProvidedError } from "../errors/customErrors.js";
 import { isCompletedToBoolean } from "../functions/isCompletedToBoolean.js";
+import { verifyUser } from "../functions/auth.js";
+import { checkMaxLength } from "../functions/checkMaxLength.js";
 
 /**
  * @param {import("fastify").FastifyRequest} request
  * @param {import("fastify").FastifyReply} reply
  */
 export const getAllTodos = async (request, reply) => {
-    const todos = db.prepare("SELECT * FROM todos ORDER BY id DESC;").all();
+    const userId = verifyUser(request, reply);
+
+    const todos = db.prepare("SELECT * FROM todos WHERE user_id = ? ORDER BY id DESC;").all(userId);
     todos.forEach((todo) => {
-        Object.assign(todo, { isCompleted: isCompletedToBoolean(todo.isCompleted) });
+        Object.assign(todo, { is_completed: isCompletedToBoolean(todo.is_completed) });
     });
 
     reply.send(todos);
@@ -20,14 +24,16 @@ export const getAllTodos = async (request, reply) => {
  * @param {import("fastify").FastifyReply} reply
  */
 export const getUniqueTodo = async (request, reply) => {
-    const todo = db.prepare("SELECT * FROM todos WHERE id = ?;").get(request.params.id);
+    const userId = verifyUser(request, reply);
+
+    const todo = db.prepare("SELECT * FROM todos WHERE user_id = ? AND id = ?;").get(userId, request.params.id);
 
     if (todo === undefined) {
         reply.status(404);
-        throw new TodoNotFoundError(`La To-Do avec l'id ${request.params.id} est introuvable.`);
+        throw new RecordNotFoundError(`La To-Do avec l'id ${request.params.id} est introuvable.`);
     }
 
-    Object.assign(todo, { isCompleted: isCompletedToBoolean(todo.isCompleted) });
+    Object.assign(todo, { is_completed: isCompletedToBoolean(todo.is_completed) });
 
     reply.send(todo);
 };
@@ -37,14 +43,20 @@ export const getUniqueTodo = async (request, reply) => {
  * @param {import("fastify").FastifyReply} reply
  */
 export const createTodo = async (request, reply) => {
+    const userId = verifyUser(request, reply);
+
     const { title, content } = request.body;
 
     if (title === undefined || / *(.+)/gm.exec(title)[1] === " ") {
-        throw new TitleNotProvidedError("Le titre de la To-Do n'est pas fourni ou est vide.");
+        reply.status(400);
+        throw new ElementNotProvidedError("Le titre de la To-Do n'est pas fourni ou est vide.");
     }
 
-    db.prepare("INSERT INTO todos (title, content) VALUES (?, ?);").run(title, content);
+    checkMaxLength(request, reply, title, 140);
 
+    db.prepare("INSERT INTO todos (title, content, user_id) VALUES (?, ?, ?);").run(title, content, userId);
+
+    reply.status(201);
     reply.send("Created");
 };
 
@@ -53,16 +65,18 @@ export const createTodo = async (request, reply) => {
  * @param {import("fastify").FastifyReply} reply
  */
 export const completeTodo = async (request, reply) => {
-    const todo = db.prepare("SELECT * FROM todos WHERE id = ?;").get(request.params.id);
+    const userId = verifyUser(request, reply);
+
+    const todo = db.prepare("SELECT * FROM todos WHERE user_id = ? AND id = ?;").get(userId, request.params.id);
 
     if (todo === undefined) {
         reply.status(404);
-        throw new TodoNotFoundError(`La To-Do avec l'id ${request.params.id} est introuvable.`);
+        throw new RecordNotFoundError(`La To-Do avec l'id ${request.params.id} est introuvable.`);
     }
 
-    db.prepare("UPDATE todos SET isCompleted = 1 WHERE id = ?;").run(request.params.id);
+    db.prepare("UPDATE todos SET is_completed = 1 WHERE user_id = ? AND id = ?;").run(userId, request.params.id);
 
-    Object.assign(todo, { isCompleted: isCompletedToBoolean(1) });
+    Object.assign(todo, { is_completed: isCompletedToBoolean(1) });
 
     reply.send(todo);
 };
@@ -72,14 +86,46 @@ export const completeTodo = async (request, reply) => {
  * @param {import("fastify").FastifyReply} reply
  */
 export const removeTodo = async (request, reply) => {
-    const todo = db.prepare("SELECT * FROM todos WHERE id = ?;").get(request.params.id);
+    const userId = verifyUser(request, reply);
+
+    const todo = db.prepare("SELECT * FROM todos WHERE user_id = ? AND id = ?;").get(userId, request.params.id);
 
     if (todo === undefined) {
         reply.status(404);
-        throw new TodoNotFoundError(`La To-Do avec l'id ${request.params.id} est introuvable.`);
+        throw new RecordNotFoundError(`La To-Do avec l'id ${request.params.id} est introuvable.`);
     }
 
-    db.prepare("DELETE FROM todos WHERE id = ?;").run(request.params.id);
+    db.prepare("DELETE FROM todos WHERE user_id = ? AND id = ?;").run(userId, request.params.id);
 
-    reply.send("Deleted");
+    reply.status(204);
+};
+
+/**
+ * @param {import("fastify").FastifyRequest} request
+ * @param {import("fastify").FastifyReply} reply
+ */
+export const appendCategory = async (request, reply) => {
+    const userId = verifyUser(request, reply);
+
+    const todo = db.prepare("SELECT * FROM todos WHERE user_id = ? AND id = ?;").get(userId, request.params.id);
+    const category = db
+        .prepare("SELECT * FROM categories WHERE user_id = ? AND id = ?;")
+        .get(userId, request.params.categoryId);
+
+    if (todo === undefined || category === undefined) {
+        reply.status(404);
+        throw new RecordNotFoundError(
+            `La To-Do avec l'id ${request.params.id} ou la catégorie avec l'id ${request.params.categoryId} sont introuvables.`
+        );
+    }
+
+    db.prepare("UPDATE todos SET category_id = ? WHERE user_id = ? AND id = ?;").run(
+        request.params.categoryId,
+        userId,
+        request.params.id
+    );
+
+    Object.assign(todo, { category_id: Number(request.params.categoryId) });
+
+    reply.send(todo);
 };
