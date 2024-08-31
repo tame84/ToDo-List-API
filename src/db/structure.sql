@@ -33,7 +33,7 @@ INSERT INTO users (
     username,
     password
 ) VALUES (
-    "tame84",
+    "admin",
     "$argon2id$v=19$m=65536,t=3,p=4$sNV95gEtzin4HETSmSLX/g$tlO5p0d/ymzFqQYLGx4fl3Pg8NuSWgjltruSMg+lZpQ"
 );
 
