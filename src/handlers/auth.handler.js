@@ -52,7 +52,8 @@ export const logIn = async (request, reply) => {
             username: user.username,
         });
         request.session.authenticated = true;
-        return;
+        await request.session.save();
+        return { succes: true, message: "Connexion réussie" };
     }
     reply.status(401);
     throw new InvalidCredentialsError("Les identifiants sont invalides.");

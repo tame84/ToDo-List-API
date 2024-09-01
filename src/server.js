@@ -15,7 +15,7 @@ fastify.register(fastifyCookie);
 fastify.register(fastifySession, {
     secret: readFileSync(join(rootDir, "secret-key")).toString(),
     cookieName: "session",
-    cookie: { secure: false },
+    cookie: { secure: process.env.NODE_ENV === "prod" },
 });
 
 fastify.register(todosRoutes, { prefix: "/v1/todos" });
@@ -24,7 +24,8 @@ fastify.register(authRoutes, { prefix: "/v1/auth" });
 
 const start = async () => {
     try {
-        await fastify.listen({ port: 3000 });
+        await fastify.listen({ port: process.env.PORT });
+        console.log(`Serveur démarré sur http:/localhost:${process.env.PORT}`);
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);
