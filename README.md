@@ -26,7 +26,7 @@ C'est un petit projet que j'ai essayé de garder léger sans utiliser trop de li
 -   `POST:/v1/auth/login` permet de se connecter à un compte
 -   `POST:/v1/auth/logout` permet de se déconnecter du compte actuel
 
-## Catégories
+### Catégories
 
 -   `GET:/v1/categories` permet de lister toutes les catégories
 -   `GET:/v1/categories/:id` permet de récupérer les informations d'une catégorie spécifique
@@ -34,7 +34,7 @@ C'est un petit projet que j'ai essayé de garder léger sans utiliser trop de li
 -   `PUT:/v1/categories/:id` permet de modifier le titre d'une catégorie
 -   `DELETE:/v1/categories/:id` permet de supprimer une catégorie
 
-## To-Do
+### To-Do
 
 -   `GET:/v1/todos` permet de lister toutes les To-Do
 -   `GET:/v1/todos/:id` permet de récupérer les informations d'une To-Do spécifique
