@@ -4,20 +4,12 @@ L'objectif du projet est de m'entrainer à l'utilisation de Fastify pour créer 
 
 ## Démarrer
 
-Le projet utilise Fastify et Argon2 comme dépendances. Il faut les installer et lancer le serveur de développement.
+Le projet utilise Fastify (avec les plugins @fastify/cookie et @fastify/session), argon2 et better-sqlite3 comme dépendances. Il faut les installer et lancer le serveur de développement.
 
 ```bash
 npm install
 npm run start
 ```
-
-## Technologies
-
-C'est un petit projet que j'ai essayé de garder léger sans utiliser trop de librairies.
-
--   NodeJS avec Fastify
--   SQLite
-
 ## Endpoints
 
 ### Authentification
